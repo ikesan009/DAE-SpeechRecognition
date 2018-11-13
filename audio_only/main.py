@@ -77,12 +77,14 @@ def train_test(model, dset_loaders, criterion, epoch, phase, optimizer, args, lo
             if phase == 'train':
                 inputs, targets = Variable(inputs.cuda()), Variable(targets.cuda())
             if phase == 'val' or phase == 'test':
-                inputs, targets = Variable(inputs.cuda(), volatile=True), Variable(targets.cuda())
+                with torch.no_grad():
+                    inputs, targets = Variable(inputs.cuda()), Variable(targets.cuda())
         else:
             if phase == 'train':
                 inputs, targets = Variable(inputs), Variable(targets)
             if phase == 'val' or phase == 'test':
-                inputs, targets = Variable(inputs, volatile=True), Variable(targets)
+                with torch.no_grad():
+                    inputs, targets = Variable(inputs), Variable(targets)
         outputs = model(inputs)
         if args.every_frame:
             outputs = torch.mean(outputs, 1)
@@ -94,7 +96,7 @@ def train_test(model, dset_loaders, criterion, epoch, phase, optimizer, args, lo
             optimizer.step()
         # stastics
         running_loss += loss.data[0] * inputs.size(0)
-        running_corrects += torch.sum(preds == targets.data)
+        running_corrects += int(torch.sum(preds == targets.data))
         running_all += len(inputs)
         if batch_idx == 0:
             since = time.time()
@@ -162,13 +164,15 @@ def test_adam(args, use_gpu):
     dset_loaders, dset_sizes = data_loader(args)
     scheduler = AdjustLR(optimizer, [args.lr], sleep_epochs=5, half=5, verbose=1)
     if args.test:
-        train_test(model, dset_loaders, criterion, 0, 'val', optimizer, args, logger, use_gpu, save_path)
-        train_test(model, dset_loaders, criterion, 0, 'test', optimizer, args, logger, use_gpu, save_path)
+        with torch.no_grad():
+            train_test(model, dset_loaders, criterion, 0, 'val', optimizer, args, logger, use_gpu, save_path)
+            train_test(model, dset_loaders, criterion, 0, 'test', optimizer, args, logger, use_gpu, save_path)
         return
     for epoch in range(args.epochs):
         scheduler.step(epoch)
         model = train_test(model, dset_loaders, criterion, epoch, 'train', optimizer, args, logger, use_gpu, save_path)
-        train_test(model, dset_loaders, criterion, epoch, 'val', optimizer, args, logger, use_gpu, save_path)
+        with torch.no_grad():
+            train_test(model, dset_loaders, criterion, epoch, 'val', optimizer, args, logger, use_gpu, save_path)
 
 
 def main():
