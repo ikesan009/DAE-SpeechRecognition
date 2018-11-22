@@ -29,9 +29,18 @@ class PrepareDataset(object):
         basename = os.path.basename(path_audio)
         fname = os.path.splitext(basename)[0] + '.mat'
         path_save = os.path.join(dir_save, fname)
+        random = np.random.randint(0, 100, (7))
         cmd = "echo \"[audio,Fs] = audioread(\'" \
               + os.path.join(dir_dataset, path_audio) \
-              + "\'); save(\'" + path_save \
+              + "\');" \
+              + "m10db = awgn(audio, -10, 'measured', " + str(random[0]) + ");" \
+              + "m5db = awgn(audio, -5, 'measured', " + str(random[1]) + ");" \
+              + "p0db = awgn(audio, 0, 'measured', " + str(random[2]) + ");" \
+              + "p5db = awgn(audio, 5, 'measured', " + str(random[3]) + ");" \
+              + "p10db = awgn(audio, 10, 'measured', " + str(random[4]) + ");" \
+              + "p15db = awgn(audio, 15, 'measured', " + str(random[5]) + ");" \
+              + "p20db = awgn(audio, 20, 'measured', " + str(random[6]) + ");" \
+              + "save(\'" + path_save \
               + "\');\" | matlab -nodisplay"
         self.run_command(cmd)   
             
@@ -46,10 +55,14 @@ class PrepareDataset(object):
     #キャプチャの実行
     def run_translatetomat(self, num_thread):
         print('running translatetomat...')
-
+        cd = os.getcwd()
         os.chdir(self.dir_dataset)
-        pathlist_audio = glob.glob('./*'+'/*'+'/*.mp4')
-        os.chdir('../')
+        pathlist_audio = glob.glob('./*/train/*000[0-9][0-9].mp4')
+        pathlist_audio.extend(glob.glob('./*/train/*00100.mp4'))
+        pathlist_audio.extend(glob.glob('./*/val/*.mp4'))
+        pathlist_audio.extend(glob.glob('./*/test/*.mp4'))
+        os.chdir(cd)
+        
         step_th = int(len(pathlist_audio) / num_thread)
         rem = len(pathlist_audio) % num_thread
         threadlist = []
