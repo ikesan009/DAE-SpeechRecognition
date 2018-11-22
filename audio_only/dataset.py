@@ -6,20 +6,21 @@ import scipy.io
 import numpy as np
 
 
-def load_file(filename):
+def load_file(filename, kind):
     arrays = scipy.io.loadmat(filename)
-    arrays = arrays['audio']
+    arrays = arrays[kind]
     arrays = arrays.flatten()
     arrays = arrays.astype(float)
     return arrays
 
 
 class MyDataset():
-    def __init__(self, folds, path):
+    def __init__(self, folds, kind, path):
         self.folds = folds
         self.path = path
+        self.kind = kind
         self.clean = 1 / 7.
-        with open('./label_sorted.txt') as myfile:
+        with open('../label_sorted.txt') as myfile:
             lines = myfile.read().splitlines()
         self.data_dir = [self.path + item for item in lines]
         self.data_files = glob.glob(self.path+'*/'+self.folds+'/*.mat')
@@ -40,26 +41,23 @@ class MyDataset():
     def __getitem__(self, idx):
         noise_prop = (1-self.clean)/6.
         temp = random.random()
-        """
-        if self.folds == 'train':
+        kind = 'audio'
+        if self.kind:
+            kind = self.kind
+        elif self.folds == 'train':
             if temp < noise_prop:
-                self.list[idx][0] = self.list[idx][0][:36]+'NoisyAudio/-5dB/'+self.list[idx][0][42:]
+                kind = 'm5db'
             elif temp < 2 * noise_prop:
-                self.list[idx][0] = self.list[idx][0][:36]+'NoisyAudio/0dB/'+self.list[idx][0][42:]
+                kind = 'p0db'
             elif temp < 3 * noise_prop:
-                self.list[idx][0] = self.list[idx][0][:36]+'NoisyAudio/5dB/'+self.list[idx][0][42:]
+                kind = 'p5db'
             elif temp < 4 * noise_prop:
-                self.list[idx][0] = self.list[idx][0][:36]+'NoisyAudio/10dB/'+self.list[idx][0][42:]
+                kind = 'p10db'
             elif temp < 5 * noise_prop:
-                self.list[idx][0] = self.list[idx][0][:36]+'NoisyAudio/15dB/'+self.list[idx][0][42:]
+                kind = 'p15db'
             elif temp < 6 * noise_prop:
-                self.list[idx][0] = self.list[idx][0][:36]+'NoisyAudio/20dB/'+self.list[idx][0][42:]
-            else:
-                self.list[idx][0] = self.list[idx][0]        
-        elif self.folds == 'val' or self.folds == 'test':
-                self.list[idx][0] = self.list[idx][0]
-        """
-        inputs = load_file(self.list[idx][0])
+                kind = 'p20db'
+        inputs = load_file(self.list[idx][0], kind)
         labels = self.list[idx][1]
         inputs = self.normalisation(inputs)
         return inputs, labels
