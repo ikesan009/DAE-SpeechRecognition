@@ -30,8 +30,8 @@ if torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 
-def data_loader(args):
-    dsets = {x: MyDataset(x, args.dataset) for x in ['train', 'val', 'test']}
+def data_loader(args, kind):
+    dsets = {x: MyDataset(x, kind, args.dataset) for x in ['train', 'val', 'test']}
     dset_loaders = {x: torch.utils.data.DataLoader(dsets[x], batch_size=args.batch_size, shuffle=True, num_workers=args.workers) for x in ['train', 'val', 'test']}
     dset_sizes = {x: len(dsets[x]) for x in ['train', 'val', 'test']}
     print('\nStatistics: train: {}, val: {}, test: {}'.format(dset_sizes['train'], dset_sizes['val'], dset_sizes['test']))
@@ -161,14 +161,19 @@ def test_adam(args, use_gpu):
     else:
         raise Exception('No model is found!')
 
-    dset_loaders, dset_sizes = data_loader(args)
     scheduler = AdjustLR(optimizer, [args.lr], sleep_epochs=5, half=5, verbose=1)
     if args.test:
-        with torch.no_grad():
-            train_test(model, dset_loaders, criterion, 0, 'val', optimizer, args, logger, use_gpu, save_path)
-            train_test(model, dset_loaders, criterion, 0, 'test', optimizer, args, logger, use_gpu, save_path)
+        kind_list = ['audio', 'm10db', 'm5db', 'p0db', 'p5db', 'p10db', 'p15db', 'p20db']
+        for kind in kind_list:
+            dset_loaders, dset_sizes = data_loader(args, kind)
+            print('Dataset SNR: ' + str(kind))
+            with torch.no_grad():
+                train_test(model, dset_loaders, criterion, 0, 'val', optimizer, args, logger, use_gpu, save_path)
+                train_test(model, dset_loaders, criterion, 0, 'test', optimizer, args, logger, use_gpu, save_path)
         return
-    for epoch in range(args.epochs):
+    dset_loaders, dset_sizes = data_loader(args, '')
+    for epoch in range(args.endepoch - args.startepoch + 1):
+        epoch += args.startepoch - 1
         scheduler.step(epoch)
         model = train_test(model, dset_loaders, criterion, epoch, 'train', optimizer, args, logger, use_gpu, save_path)
         with torch.no_grad():
@@ -186,8 +191,8 @@ def main():
     parser.add_argument('--lr', default=0.0003, type=float, help='initial learning rate')
     parser.add_argument('--batch-size', default=36, type=int, help='mini-batch size (default: 36)')
     parser.add_argument('--workers', default=8, type=int, help='number of data loading workers (default: 4)')
-    parser.add_argument('--epochs', default=30, type=int, help='number of total epochs')
-    parser.add_argument('--interval', default=10, type=int, help='display interval')
+    parser.add_argument('--startepoch', default=1, type=int, help='start epoch')
+    parser.add_argument('--endepoch', default=30, type=int, help='end epoch')    parser.add_argument('--interval', default=10, type=int, help='display interval')
     parser.add_argument('--test', default='', help='perform on the test phase')
     args = parser.parse_args()
 
