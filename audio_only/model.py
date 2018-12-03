@@ -1,4 +1,116 @@
 # coding: utf-8
+
+"""
+###audio recognition model###
+
+audiofile:
+    1ch
+    16kHz
+    66kbps
+    1.16s
+    
+model:
+    #temporalConv#
+    input:[batch, 18560]
+    ↓
+    reshape:[batch, 1, 18560]
+    ↓
+    fronted1D:[batch, 64, 4640]
+    ↓
+    ↓conv1d:[batch, 64, 4640]
+    ↓BatchNorm1d
+    ↓ReLU
+    ↓
+    resnet18:[batch*29, 512]
+    ↓
+    ↓layer1:[batch, 64, 4640]
+    ↓↓conv1d:[batch, 64, 4640]
+    ↓↓BatchNorm1d
+    ↓↓ReLU
+    ↓↓conv1d:[batch, 64, 4640]
+    ↓↓BatchNorm1d
+    ↓↓residual
+    ↓↓ReLU
+    ↓【x2】
+    ↓↓
+    ↓layer2:[batch, 128, 2320]
+    ↓↓conv1d:[batch, 128, 2320]
+    ↓↓BatchNorm1d
+    ↓↓conv1d:[batch, 128, 2320]
+    ↓↓BatchNorm1d
+    ↓↓ReLU
+    ↓↓conv1d:[batch, 128, 2320]
+    ↓↓BatchNorm1d
+    ↓↓residual
+    ↓↓ReLU
+    ↓【x2】
+    ↓↓
+    ↓layer3:[batch, 256, 1160]
+    ↓↓conv1d:[batch, 256, 1160]
+    ↓↓BatchNorm1d
+    ↓↓conv1d:[batch, 256, 1160]
+    ↓↓BatchNorm1d
+    ↓↓ReLU
+    ↓↓conv1d:[batch, 256, 1160]
+    ↓↓BatchNorm1d
+    ↓↓residual
+    ↓↓ReLU
+    ↓【x2】
+    ↓↓
+    ↓layer4:[batch, 512, 580]
+    ↓↓conv1d:[batch, 512, 580]
+    ↓↓BatchNorm1d
+    ↓↓conv1d:[batch, 512, 580]
+    ↓↓BatchNorm1d
+    ↓↓ReLU
+    ↓↓conv1d:[batch, 512, 580]
+    ↓↓BatchNorm1d
+    ↓↓residual
+    ↓↓ReLU
+    ↓【x2】
+    ↓↓
+    ↓avgpool:[batch, 512, 29]
+    ↓reshape:[batch, 29, 512]
+    ↓reshape:[batch*29, 512]
+    ↓fc:[batch*29, 512]
+    ↓
+    reshape:[batch, 29, 512]
+    reshape:[batch, 512, 29]
+    ↓
+    backend_conv1:[batch, 2048, 1]
+    ↓
+    ↓conv1d:[batch, 1024, 13]
+    ↓BatchNorm1d
+    ↓ReLU
+    ↓maxpool:[batch, 1024, 7]
+    ↓conv1d:[batch, 2048, 2]
+    ↓BatchNorm1d
+    ↓ReLU
+    ↓
+    mean:[batch, 2048]
+    ↓
+    backend_conv2:[batch, 500]
+    ↓
+    ↓Linear:[batch, 512]
+    ↓BatchNorm1d
+    ↓ReLU
+    ↓Linear:[batch, 500]
+    ↓
+    output:[batch, 500]
+
+    #backendGRU#
+    resnet18:[batch*29, 512]
+    ↓
+    reshape:[batch, 29, 512]
+    ↓
+    gru:[batch, 29, 500]
+    ↓
+    ↓nn.GRU:[batch, 29, 1024]
+    ↓fc:[batch, 29, 500]
+    ↓
+    output:[batch, 29, 500]
+"""
+
 import math
 import numpy as np
 
