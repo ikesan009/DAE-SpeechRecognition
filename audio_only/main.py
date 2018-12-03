@@ -66,7 +66,7 @@ def train_test(model, dset_loaders, criterion, epoch, phase, optimizer, args, lo
         model.train()
     if phase == 'train':
         logger.info('-' * 10)
-        logger.info('Epoch {}/{}'.format(epoch, args.epochs - 1))
+        logger.info('Epoch {}/{}'.format(epoch, args.endepoch - 1))
         logger.info('Current Learning rate: {}'.format(showLR(optimizer)))
 
     running_loss, running_corrects, running_all = 0., 0., 0.
@@ -160,7 +160,6 @@ def test_adam(args, use_gpu):
             ], lr=0., weight_decay=0.)
     else:
         raise Exception('No model is found!')
-
     scheduler = AdjustLR(optimizer, [args.lr], sleep_epochs=5, half=5, verbose=1)
     if args.test:
         kind_list = ['audio', 'm10db', 'm5db', 'p0db', 'p5db', 'p10db', 'p15db', 'p20db']
@@ -192,7 +191,8 @@ def main():
     parser.add_argument('--batch-size', default=36, type=int, help='mini-batch size (default: 36)')
     parser.add_argument('--workers', default=8, type=int, help='number of data loading workers (default: 4)')
     parser.add_argument('--startepoch', default=1, type=int, help='start epoch')
-    parser.add_argument('--endepoch', default=30, type=int, help='end epoch')    parser.add_argument('--interval', default=10, type=int, help='display interval')
+    parser.add_argument('--endepoch', default=30, type=int, help='end epoch')
+    parser.add_argument('--interval', default=10, type=int, help='display interval')
     parser.add_argument('--test', default='', help='perform on the test phase')
     args = parser.parse_args()
 
